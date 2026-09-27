@@ -26,36 +26,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Archive and Export IPA (Unsigned)
+      - name: Build IPA (Unsigned)
         run: |
-          set -e
-          rm -rf build/ios/ipa
-          mkdir -p build/ios/ipa
-
-          xcodebuild \
-            -scheme Runner \
-            -configuration Release \
-            -sdk iphoneos \
-            -archivePath build/ios/ipa/Runner.xcarchive \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_STYLE=Manual \
-            DEVELOPMENT_TEAM="" \
-            PROVISIONING_PROFILE="" \
-            PROVISIONING_PROFILE_SPECIFIER="" \
-            CODE_SIGN_IDENTITY="" \
-            archive
-
-          xcodebuild \
-            -exportArchive \
-            -archivePath build/ios/ipa/Runner.xcarchive \
-            -exportPath build/ios/ipa \
-            -exportOptionsPlist ios/Runner/ExportOptions.plist \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            DEVELOPMENT_TEAM=""
-
-          ls -la build/ios/ipa/*.ipa
+          flutter build ipa --no-codesign --export-options-plist=ios/Runner/ExportOptions.plist --xcode-configuration=Release
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
