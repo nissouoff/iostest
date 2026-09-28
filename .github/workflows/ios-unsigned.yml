@@ -54,8 +54,11 @@ jobs:
           echo "Found workspace: $WORKSPACE"
           grep -q "Pods" "$WORKSPACE/contents.xcworkspacedata" || (echo "ERREUR: $WORKSPACE ne contient pas les Pods" && exit 1)
           xcodebuild -list -workspace "$WORKSPACE" | head -n 40
-          # Premier scheme applicatif (ignore Pods)
-          SCHEME=$(xcodebuild -list -workspace "$WORKSPACE" | awk '/Schemes:/{flag=1;next}/^$/{flag=0}flag' | grep -v Pods | head -n 1 | xargs)
+          # Scheme applicatif = nom du .xcodeproj (convention Expo CNG),
+          # pas le 1er par ordre alphabétique (sinon on archive un pod, ex. EXConstants)
+          SCHEME=$(basename ios/*.xcodeproj .xcodeproj)
+          xcodebuild -list -workspace "$WORKSPACE" | awk '/Schemes:/{flag=1;next}/^$/{flag=0}flag' | grep -q "^ *$SCHEME *$" \
+            || (echo "ERREUR: scheme $SCHEME introuvable" && exit 1)
           echo "scheme=$SCHEME" >> $GITHUB_OUTPUT
           echo "Using scheme: $SCHEME"
 
@@ -75,7 +78,8 @@ jobs:
 
       - name: Package unsigned .ipa
         run: |
-          APP_PATH=$(find build/monappios.xcarchive/Products/Applications -maxdepth 1 -name "*.app" | head -n 1)
+          ls build/monappios.xcarchive/Products/ || true
+          APP_PATH=$(find build/monappios.xcarchive -maxdepth 4 -name "*.app" | head -n 1)
           echo "App: $APP_PATH"
           test -d "$APP_PATH" || (echo "Aucun .app trouvé" && exit 1)
           rm -rf Payload unsigned.ipa
