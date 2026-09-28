@@ -38,7 +38,7 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Prebuild iOS native project (CNG)
-        run: npx expo prebuild --platform ios --non-interactive
+        run: npx expo prebuild --platform ios
 
       - name: Install CocoaPods
         working-directory: ios
@@ -56,23 +56,23 @@ jobs:
           echo "scheme=$SCHEME" >> $GITHUB_OUTPUT
           echo "Using scheme: $SCHEME"
 
-      - name: Build .app NON SIGNÉ (iphoneos)
+      - name: Archive NON SIGNÉE (iphoneos)
         run: |
-          xcodebuild \
+          xcodebuild archive \
             -workspace "${{ steps.detect.outputs.workspace }}" \
             -scheme "${{ steps.detect.outputs.scheme }}" \
-            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
             -configuration Release \
-            -derivedDataPath build \
+            -archivePath build/monappios.xcarchive \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             AD_HOC_CODE_SIGNING_ALLOWED=YES \
-            ONLY_ACTIVE_ARCH=NO
+            COMPILER_INDEX_STORE_ENABLE=NO
 
       - name: Package unsigned .ipa
         run: |
-          APP_PATH=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name "*.app" | head -n 1)
+          APP_PATH=$(find build/monappios.xcarchive/Products/Applications -maxdepth 1 -name "*.app" | head -n 1)
           echo "App: $APP_PATH"
           test -d "$APP_PATH" || (echo "Aucun .app trouvé" && exit 1)
           rm -rf Payload unsigned.ipa
